@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: nasa-apod-explorer
+  
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000 # 2 seconds timeout
+
+# Custom NASA Configuration
+nasa:
+  api:
+    base-url: https://api.nasa.gov/planetary/apod
+    key: DEMO_KEY # We will start with the free demo key
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.nasa.explorer: DEBUG
