@@ -9,7 +9,6 @@ import { useState } from 'react';
 import { format, subDays } from 'date-fns';
 
 export function ApodHero() {
-  // Default to Yesterday to avoid timezone bugs
   const [date, setDate] = useState<Date | undefined>(subDays(new Date(), 1));
 
   const { data, isLoading, isError } = useQuery({

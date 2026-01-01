@@ -1,8 +1,5 @@
 import axios from 'axios';
 
-// 1. DYNAMIC URL SELECTION
-// If VITE_API_URL is set (in Vercel), use it.
-// Otherwise, default to Localhost (for when you are coding).
 export const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://upgraded-space-fortnight-499v7wgg7rv2qq9q-8080.app.github.dev/api/v1';
 
 const api = axios.create({
@@ -39,11 +36,7 @@ export const getApodRange = async (startDate: string, endDate: string) => {
   const response = await api.get<ApodResponse[]>('/apod/range', { params });
   return response.data;
 };
-
-// ✅ KEEP THIS: Needed for the Download Button to work!
 export const getProxyDownloadUrl = (originalUrl: string) => {
-  // Removes '/api/v1' from the base URL if it exists, then appends the download path
-  // This ensures we construct the correct path: /api/v1/apod/download
   const baseUrl = BACKEND_URL.endsWith('/api/v1') 
     ? BACKEND_URL 
     : `${BACKEND_URL}/api/v1`;
