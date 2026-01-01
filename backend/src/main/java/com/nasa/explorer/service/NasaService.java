@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -18,8 +19,10 @@ public class NasaService {
 
     private static final Logger logger = LoggerFactory.getLogger(NasaService.class);
 
+    @Autowired
     private final RestTemplate restTemplate;
     
+    @Autowired(required = false)
     private final StringRedisTemplate redisTemplate;
     
     private final ObjectMapper objectMapper;
@@ -30,25 +33,20 @@ public class NasaService {
     @Value("${nasa.api.key}")
     private String apiKey;
 
-    public NasaService(RestTemplate restTemplate, 
-                       StringRedisTemplate redisTemplate, 
-                       ObjectMapper objectMapper) {
-        this.restTemplate = restTemplate;
-        this.redisTemplate = redisTemplate;
-        this.objectMapper = objectMapper;
-    }
-
     public ApodResponse getApod(String date) {
         String cacheKey = "apod:" + date;
-        String cachedValue = redisTemplate.opsForValue().get(cacheKey);
         
-        if (cachedValue != null) {
-            try {
-                logger.info("✅ Cache HIT for date: {}", date);
-                return objectMapper.readValue(cachedValue, ApodResponse.class);
-            } catch (JsonProcessingException e) {
-                logger.error("Cache error", e);
+        
+        try {
+            if (redisTemplate != null) {
+                String cachedValue = redisTemplate.opsForValue().get(cacheKey);
+                if (cachedValue != null) {
+                    logger.info(" Cache HIT for date: {}", date);
+                    return objectMapper.readValue(cachedValue, ApodResponse.class);
+                }
             }
+        } catch (Exception e) {
+            logger.warn(" Redis unavailable. Skipping cache read.");
         }
 
         String url = UriComponentsBuilder.fromHttpUrl(baseUrl)
@@ -61,15 +59,18 @@ public class NasaService {
             ApodResponse response = restTemplate.getForObject(url, ApodResponse.class);
             
             if (response != null) {
+                
                 try {
-                    redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(response));
-                } catch (JsonProcessingException e) {
-                    logger.error("Redis write error", e);
+                    if (redisTemplate != null) {
+                        redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(response));
+                    }
+                } catch (Exception e) {
+                    logger.warn(" Redis unavailable. Skipping cache write.");
                 }
                 return response;
             }
         } catch (Exception e) {
-            logger.error("NASA API failed: {}. Switching to MOCK MODE.", e.getMessage());
+            logger.error(" NASA API failed: {}. Switching to MOCK MODE.", e.getMessage());
             return getMockApod(date);
         }
         
