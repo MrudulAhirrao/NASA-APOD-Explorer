@@ -20,10 +20,8 @@ public class NasaService {
 
     private final RestTemplate restTemplate;
     
-    // MISSING VAR 1: Redis Tool
     private final StringRedisTemplate redisTemplate;
     
-    // MISSING VAR 2: JSON Tool
     private final ObjectMapper objectMapper;
 
     @Value("${nasa.api.base-url}")
@@ -32,7 +30,6 @@ public class NasaService {
     @Value("${nasa.api.key}")
     private String apiKey;
 
-    // Constructor Injection (This fixes "cannot find symbol")
     public NasaService(RestTemplate restTemplate, 
                        StringRedisTemplate redisTemplate, 
                        ObjectMapper objectMapper) {
@@ -42,7 +39,6 @@ public class NasaService {
     }
 
     public ApodResponse getApod(String date) {
-        // 1. Check Cache First
         String cacheKey = "apod:" + date;
         String cachedValue = redisTemplate.opsForValue().get(cacheKey);
         
@@ -55,7 +51,6 @@ public class NasaService {
             }
         }
 
-        // 2. Build URL
         String url = UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .queryParam("api_key", apiKey)
                 .queryParam("date", date)
@@ -66,7 +61,6 @@ public class NasaService {
             ApodResponse response = restTemplate.getForObject(url, ApodResponse.class);
             
             if (response != null) {
-                // Save to Redis for next time
                 try {
                     redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(response));
                 } catch (JsonProcessingException e) {
@@ -75,7 +69,6 @@ public class NasaService {
                 return response;
             }
         } catch (Exception e) {
-            // 3. THE CIRCUIT BREAKER (Fallback Mode)
             logger.error("NASA API failed: {}. Switching to MOCK MODE.", e.getMessage());
             return getMockApod(date);
         }
@@ -86,17 +79,14 @@ public class NasaService {
     private ApodResponse getMockApod(String date) {
         ApodResponse mock = new ApodResponse();
         mock.setDate(date);
-        // Add the date to the title so you can SEE it changing in the UI
         mock.setTitle("Mock Mode: Cosmos for " + date); 
         mock.setExplanation("NASA limit reached. Showing cached fallback for " + date);
         mock.setMedia_type("image");
-        // Use a reliable image URL (Pillars of Creation)
         mock.setHdurl("https://upload.wikimedia.org/wikipedia/commons/6/68/Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg");
         mock.setUrl("https://upload.wikimedia.org/wikipedia/commons/6/68/Pillars_of_creation_2014_HST_WFC3-UVIS_full-res_denoised.jpg");
         return mock;
     }
 
-    // ... imports
 
     public List<ApodResponse> getApodRange(String startDate, String endDate) {
         String cacheKey = "apod-range:" + startDate + ":" + endDate;
@@ -104,7 +94,6 @@ public class NasaService {
 
         if (cachedValue != null) {
             try {
-                // Return cached data
                 return objectMapper.readValue(cachedValue, new TypeReference<List<ApodResponse>>(){});
             } catch (JsonProcessingException e) {
                 logger.error("Cache range error", e);
@@ -134,14 +123,12 @@ public class NasaService {
         return Collections.emptyList();
     }
 
-    // ✅ NEW: Helper to generate a full week of data
     private List<ApodResponse> generateMockRange(String startDate, String endDate) {
         List<ApodResponse> mockList = new java.util.ArrayList<>();
         
         java.time.LocalDate start = java.time.LocalDate.parse(startDate);
         java.time.LocalDate end = java.time.LocalDate.parse(endDate);
 
-        // Loop from End Date down to Start Date (Newest first)
         java.time.LocalDate current = end;
         while (!current.isBefore(start)) {
             mockList.add(getMockApod(current.toString()));

@@ -19,18 +19,16 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 1. Check if we have tokens available
+        
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
         if (probe.isConsumed()) {
-            // 2. Add header telling them how many tokens are left
             response.addHeader("X-Rate-Limit-Remaining", String.valueOf(probe.getRemainingTokens()));
-            return true; // Allow the request to proceed
+            return true; 
         } else {
-            // 3. Block the request
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.getWriter().write("Too many requests! Global Rate Limit Exceeded.");
-            return false; // Stop right here
+            return false; 
         }
     }
 }

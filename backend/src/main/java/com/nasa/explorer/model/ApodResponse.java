@@ -7,7 +7,6 @@ public class ApodResponse {
     private String explanation;
     private String hdurl;
     
-    // Sometimes Jackson reads "hdUrl" or "hdurl", so we handle both
     @JsonProperty("hdurl")
     private String hdUrl; 
     

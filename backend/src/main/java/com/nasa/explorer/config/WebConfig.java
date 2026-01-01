@@ -13,9 +13,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // Apply Rate Limiting to ALL endpoints starting with /api/
         registry.addInterceptor(rateLimitInterceptor)
                 .addPathPatterns("/api/**"); 
-                // Note: We intentionally exclude /swagger-ui so documentation is always accessible
+                
     }
 }
