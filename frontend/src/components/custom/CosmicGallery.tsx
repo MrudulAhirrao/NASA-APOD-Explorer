@@ -227,12 +227,19 @@ export function CosmicGallery() {
 }
 
 // Helper to get YouTube thumbnails if needed
-function getThumbnail(url: string) {
+function getThumbnail(url: string | undefined | null) {
+    // 1. Safety Check: If URL is missing, return a fallback image immediately
+    if (!url) {
+        return "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1024px-No_image_available.svg.png";
+    }
+
+    // 2. Standard Logic
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
         const videoId = url.split('/').pop()?.split('?')[0];
         return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     }
-    return url; // Return original if not youtube (fallback)
+    
+    return url; 
 }
 
 function GallerySkeleton() {
