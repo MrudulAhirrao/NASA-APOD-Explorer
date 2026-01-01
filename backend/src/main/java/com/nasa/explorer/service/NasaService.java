@@ -33,20 +33,28 @@ public class NasaService {
     @Value("${nasa.api.key}")
     private String apiKey;
 
+    public NasaService(RestTemplate restTemplate, 
+                       StringRedisTemplate redisTemplate, 
+                       ObjectMapper objectMapper) {
+        this.restTemplate = restTemplate;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+    }
+
     public ApodResponse getApod(String date) {
         String cacheKey = "apod:" + date;
         
-        
+        // ✅ FIX 3: Wrap Redis Read in Try-Catch (The Crash Stopper)
         try {
             if (redisTemplate != null) {
                 String cachedValue = redisTemplate.opsForValue().get(cacheKey);
                 if (cachedValue != null) {
-                    logger.info(" Cache HIT for date: {}", date);
+                    logger.info("✅ Cache HIT for date: {}", date);
                     return objectMapper.readValue(cachedValue, ApodResponse.class);
                 }
             }
         } catch (Exception e) {
-            logger.warn(" Redis unavailable. Skipping cache read.");
+            logger.warn("⚠️ Redis unavailable. Skipping cache read.");
         }
 
         String url = UriComponentsBuilder.fromHttpUrl(baseUrl)
@@ -59,18 +67,18 @@ public class NasaService {
             ApodResponse response = restTemplate.getForObject(url, ApodResponse.class);
             
             if (response != null) {
-                
+                // ✅ FIX 4: Wrap Redis Write in Try-Catch
                 try {
                     if (redisTemplate != null) {
                         redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(response));
                     }
                 } catch (Exception e) {
-                    logger.warn(" Redis unavailable. Skipping cache write.");
+                    logger.warn("⚠️ Redis unavailable. Skipping cache write.");
                 }
                 return response;
             }
         } catch (Exception e) {
-            logger.error(" NASA API failed: {}. Switching to MOCK MODE.", e.getMessage());
+            logger.error("❌ NASA API failed: {}. Switching to MOCK MODE.", e.getMessage());
             return getMockApod(date);
         }
         
