@@ -1,6 +1,12 @@
+/workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/dto/DateRangeRequest.java
 /workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/service/NasaService.java
+/workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/config/RedisConfig.java
+/workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/config/CorsConfig.java
 /workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/exception/GlobalExceptionHandler.java
+/workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/config/WebConfig.java
+/workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/config/RateLimitInterceptor.java
 /workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/config/RateLimitingConfig.java
 /workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/controller/ApodController.java
 /workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/model/ApodResponse.java
+/workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/controller/HealthController.java
 /workspaces/NASA-APOD-Explorer/backend/src/main/java/com/nasa/explorer/Application.java
