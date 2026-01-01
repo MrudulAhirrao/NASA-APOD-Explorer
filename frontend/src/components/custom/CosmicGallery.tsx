@@ -22,6 +22,7 @@ export function CosmicGallery() {
     status,
   } = useInfiniteQuery<ApodResponse[]>({
     queryKey: ['apods-infinite'],
+    retry: false,
     initialPageParam: null, 
     getNextPageParam: (lastPage) => {
       if (!lastPage || lastPage.length === 0) return undefined;

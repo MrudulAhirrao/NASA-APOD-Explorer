@@ -90,16 +90,21 @@ public class NasaService {
 
     public List<ApodResponse> getApodRange(String startDate, String endDate) {
         String cacheKey = "apod-range:" + startDate + ":" + endDate;
-        String cachedValue = redisTemplate.opsForValue().get(cacheKey);
-
-        if (cachedValue != null) {
-            try {
-                return objectMapper.readValue(cachedValue, new TypeReference<List<ApodResponse>>(){});
-            } catch (JsonProcessingException e) {
-                logger.error("Cache range error", e);
+        
+        // 1. TRY READING REDIS (But don't crash if it fails)
+        try {
+            if (redisTemplate != null) {
+                String cachedValue = redisTemplate.opsForValue().get(cacheKey);
+                if (cachedValue != null) {
+                    logger.info("✅ Cache HIT for range: " + startDate);
+                    return objectMapper.readValue(cachedValue, new TypeReference<List<ApodResponse>>(){});
+                }
             }
+        } catch (Exception e) {
+            logger.warn("⚠️ Redis unavailable or connection failed. Skipping cache read.");
         }
 
+        // 2. BUILD NASA URL
         String url = UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .queryParam("api_key", apiKey)
                 .queryParam("start_date", startDate)
@@ -107,17 +112,27 @@ public class NasaService {
                 .toUriString();
 
         try {
+            // 3. CALL NASA API
             ApodResponse[] response = restTemplate.getForObject(url, ApodResponse[].class);
             if (response != null) {
-                List<ApodResponse> list = new java.util.ArrayList<>(Arrays.asList(response));
-                
+                List<ApodResponse> list = new ArrayList<>(Arrays.asList(response));
+                // Sort Newest First
                 list.sort((a, b) -> b.getDate().compareTo(a.getDate()));
 
-                redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(list));
+                // 4. TRY SAVING TO REDIS (But don't crash if it fails)
+                try {
+                    if (redisTemplate != null) {
+                        redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(list));
+                    }
+                } catch (Exception e) {
+                    logger.warn("⚠️ Redis unavailable. Skipping cache write.");
+                }
+                
                 return list;
             }
         } catch (Exception e) {
-            logger.error("Failed to fetch range. Generating FULL Mock Week.");
+            // 5. CATCH ALL ERRORS (429 Rate Limit, 500 NASA Error, etc.)
+            logger.error("❌ API Failed. Switching to Mock Mode. Error: " + e.getMessage());
             return generateMockRange(startDate, endDate);
         }
         return Collections.emptyList();
